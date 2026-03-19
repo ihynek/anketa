@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hlasování – nejlepší video</title>
+<style>
+  :root{
+    --bg:#ffffff;--bg2:#f5f4f1;--bg3:#eeede9;
+    --txt:#1a1a18;--txt2:#6b6a65;--txt3:#9b9993;
+    --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+    --green:#166534;--green-bg:#dcfce7;--green-bd:#bbf7d0;
+    --red:#991b1b;--red-bg:#fee2e2;
+    --accent:#1a1a18;
+    --r-md:8px;--r-lg:12px;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+      --txt:#f0efe9;--txt2:#9b9993;--txt3:#6b6a65;
+      --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+      --green:#4ade80;--green-bg:#14532d;--green-bd:#166534;
+      --red:#f87171;--red-bg:#450a0a;
+      --accent:#f0efe9;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+       background:var(--bg2);color:var(--txt);min-height:100vh}
+  a{color:inherit}
+
+  /* ── Setup overlay ── */
+  #setup{position:fixed;inset:0;background:var(--bg2);z-index:100;
+         display:flex;align-items:center;justify-content:center;padding:1rem}
+  .setup-card{background:var(--bg);border:0.5px solid var(--border);
+              border-radius:var(--r-lg);padding:2rem;max-width:480px;width:100%}
+  .setup-card h2{font-size:18px;font-weight:500;margin-bottom:.4rem}
+  .setup-card p{font-size:13px;color:var(--txt2);margin-bottom:1.5rem;line-height:1.6}
+  .setup-card input{width:100%;padding:9px 12px;font-size:14px;
+                    border:0.5px solid var(--border2);border-radius:var(--r-md);
+                    background:var(--bg);color:var(--txt);margin-bottom:.75rem}
+  .setup-card input:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .setup-card .hint{font-size:12px;color:var(--txt3);margin-bottom:1.25rem;line-height:1.5}
+
+  /* ── Main layout ── */
+  .page{max-width:1020px;margin:0 auto;padding:1.25rem}
+  header{display:flex;align-items:flex-start;justify-content:space-between;
+         margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
+  .title{font-size:20px;font-weight:500}
+  .subtitle{font-size:13px;color:var(--txt2);margin-top:3px}
+  .hright{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .chip{font-size:13px;color:var(--txt2);background:var(--bg);
+        border:0.5px solid var(--border);border-radius:20px;padding:5px 14px}
+  .chip strong{color:var(--txt);font-weight:500}
+
+  /* ── Tabs ── */
+  .tabs{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem}
+  .tab{padding:9px 22px;background:none;border:none;border-bottom:2px solid transparent;
+       cursor:pointer;font-size:14px;color:var(--txt2);font-family:inherit;transition:.15s}
+  .tab.on{color:var(--txt);border-bottom-color:var(--txt);font-weight:500}
+
+  /* ── Grid ── */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r-lg);
+        padding:1rem 1.1rem;display:flex;flex-direction:column;gap:10px;transition:border-color .2s}
+  .card.done{border-color:var(--green-bd)}
+  .vnum{font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em}
+  .vtitle{font-size:14px;font-weight:500;line-height:1.4;min-height:2.8em;color:var(--txt)}
+  .row{display:flex;gap:6px}
+  .btn{padding:7px 10px;background:none;border:0.5px solid var(--border2);
+       border-radius:var(--r-md);font-size:12px;cursor:pointer;font-family:inherit;
+       color:var(--txt);transition:.15s;flex:1;text-align:center;text-decoration:none;
+       display:flex;align-items:center;justify-content:center;gap:4px}
+  .btn:hover:not(:disabled){background:var(--bg2)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn.voted{border-color:var(--green-bd);color:var(--green)}
+  .bar-lbl{font-size:11px;color:var(--txt3)}
+  .bar-t{height:3px;background:var(--bg3);border-radius:2px}
+  .bar-f{height:100%;background:var(--border2);border-radius:2px;transition:width .3s}
+  .card.done .bar-f{background:var(--green)}
+  .empty{text-align:center;padding:4rem 1rem;color:var(--txt2);font-size:14px;line-height:1.7}
+
+  /* ── Admin panel ── */
+  .ap{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r-lg);
+      padding:1.25rem;margin-top:1.25rem}
+  .ap-title{font-size:15px;font-weight:500;margin-bottom:1rem}
+  .sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+             color:var(--txt3);margin:1rem 0 .5rem}
+  .inp{width:100%;padding:7px 10px;font-size:13px;background:var(--bg);color:var(--txt);
+       border:0.5px solid var(--border2);border-radius:var(--r-md);font-family:inherit;margin-bottom:6px}
+  .inp:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .inp.gname{font-size:14px;font-weight:500}
+  .vrow{display:flex;gap:6px;margin-bottom:5px;align-items:center}
+  .vrow .inp{margin:0;flex:1}
+  .rm{background:none;border:none;cursor:pointer;color:var(--txt3);
+      font-size:16px;padding:3px 7px;line-height:1}
+  .rm:hover{color:var(--red)}
+  .add-btn{width:100%;padding:7px;background:none;font-family:inherit;
+           border:0.5px dashed var(--border2);border-radius:var(--r-md);
+           color:var(--txt2);font-size:12px;cursor:pointer;margin-top:4px}
+  .add-btn:hover{background:var(--bg2)}
+  .sep{border:none;border-top:0.5px solid var(--border);margin:1.1rem 0}
+  .ap-foot{display:flex;gap:8px;justify-content:flex-end;
+           margin-top:1.1rem;padding-top:1rem;border-top:0.5px solid var(--border);align-items:center}
+  .btn-save{padding:8px 22px;background:var(--txt);color:var(--bg);border:none;
+            border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+  .btn-cancel{padding:8px 18px;background:none;border:0.5px solid var(--border2);
+              border-radius:var(--r-md);font-size:13px;cursor:pointer;font-family:inherit;color:var(--txt2)}
+  .btn-reset{margin-right:auto;padding:7px 14px;background:none;
+             border:0.5px solid var(--red);border-radius:var(--r-md);
+             font-size:12px;cursor:pointer;font-family:inherit;color:var(--red)}
+  .btn-settings{background:none;border:0.5px solid var(--border);border-radius:var(--r-md);
+                cursor:pointer;font-size:12px;color:var(--txt2);font-family:inherit;padding:6px 12px}
+  .btn-settings:hover{background:var(--bg2)}
+  .msg{font-size:13px;padding:8px 14px;border-radius:var(--r-md);margin-bottom:.75rem}
+  .msg.ok{background:var(--green-bg);color:var(--green)}
+  .msg.err{background:var(--red-bg);color:var(--red)}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border2);
+           border-top-color:var(--txt);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading{display:flex;align-items:center;justify-content:center;gap:10px;
+           padding:3rem;color:var(--txt2);font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- ── SETUP OVERLAY ── -->
+<div id="setup">
+  <div class="setup-card">
+    <h2>Nastavení ankety</h2>
+    <p>Zadej URL své Google Apps Script webové aplikace. URL se uloží do tohoto prohlížeče a příště se nezobrazí.</p>
+    <input id="gasUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec">
+    <p class="hint">URL najdeš v Apps Scriptu: <b>Nasadit → Správa nasazení</b></p>
+    <input id="adminPin" type="password" placeholder="Admin PIN (pro správce, ostatní nechte prázdné)">
+    <button class="btn btn-save" style="width:100%;padding:10px" onclick="setupSave()">Potvrdit</button>
+    <div id="setup-err" style="margin-top:.75rem;font-size:13px;color:var(--red)"></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div class="page" id="app" style="display:none">
+  <header>
+    <div>
+      <div class="title">Hlasování – nejlepší video</div>
+      <div class="subtitle">Každý má 3 hlasy &middot; 1 hlas na jedno video &middot; anonymní</div>
+    </div>
+    <div class="hright">
+      <div class="chip">Zbývají: <strong id="vleft">3</strong></div>
+      <button class="btn-settings" onclick="toggleAdmin()">⚙ Správce</button>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="mainGrid"><div class="loading"><div class="spinner"></div> Načítám…</div></div>
+  <div id="adminArea"></div>
+</div>
+
+<script>
+const GAS_KEY  = 'hv_gasUrl';
+const PIN_KEY  = 'hv_pin';
+const SID_KEY  = 'hv_sid';
+const POLL_MS  = 12000;
+
+let gasUrl = localStorage.getItem(GAS_KEY) || '';
+let pin    = localStorage.getItem(PIN_KEY)  || '';
+let sid    = localStorage.getItem(SID_KEY);
+if (!sid) { sid = Math.random().toString(36).slice(2,12); localStorage.setItem(SID_KEY,sid); }
+
+let cfg    = { groups: [] };
+let counts = {};
+let myVotes= new Set();
+let activeG= 0;
+let adminOpen = false;
+let pollTimer = null;
+
+/* ── SETUP ── */
+function setupSave() {
+  const u = document.getElementById('gasUrl').value.trim();
+  if (!u.startsWith('https://script.google.com')) {
+    document.getElementById('setup-err').textContent = 'URL nevypadá správně.'; return;
+  }
+  const p = document.getElementById('adminPin').value.trim();
+  localStorage.setItem(GAS_KEY, u);
+  if (p) localStorage.setItem(PIN_KEY, p);
+  gasUrl = u; pin = p;
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  init();
+}
+
+/* ── API ── */
+async function api(params) {
+  const url = gasUrl + '?' + new URLSearchParams({ sid, ...params });
+  const r = await fetch(url);
+  return r.json();
+}
+
+/* ── INIT ── */
+async function init() {
+  try {
+    const d = await api({});
+    cfg    = d.config;
+    counts = d.counts || {};
+    myVotes= new Set(d.myVotes || []);
+    render();
+    startPoll();
+  } catch(e) {
+    document.getElementById('mainGrid').innerHTML =
+      `<div class="empty">Nelze se připojit k Apps Scriptu.<br><small>${e}</small></div>`;
+  }
+}
+
+function startPoll() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if (adminOpen) return;
+    try {
+      const d = await api({});
+      counts = d.counts || {};
+      renderGrid();
+    } catch(_) {}
+  }, POLL_MS);
+}
+
+/* ── RENDER ── */
+function render() {
+  renderTabs();
+  renderGrid();
+  document.getElementById('vleft').textContent = 3 - myVotes.size;
+}
+
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = cfg.groups.map((g,i) =>
+    `<button class="tab ${i===activeG?'on':''}" onclick="switchG(${i})">${esc(g.name||'Skupina '+(i+1))}</button>`
+  ).join('');
+}
+
+function renderGrid() {
+  const vids = cfg.groups[activeG]?.videos || [];
+  const el   = document.getElementById('mainGrid');
+  if (!vids.length) {
+    el.innerHTML = `<div class="empty">Zatím žádná videa.<br>Správce může přidat videa přes ⚙ Správce.</div>`;
+    return;
+  }
+  const mx = Math.max(1, ...vids.map((_,vi) => counts[`g${activeG}_${vi}`] || 0));
+  el.innerHTML = `<div class="grid">${vids.map((v,vi) => {
+    const k     = `g${activeG}_${vi}`;
+    const c     = counts[k] || 0;
+    const voted = myVotes.has(k);
+    const can   = !voted && myVotes.size < 3;
+    const pct   = Math.round(c / mx * 100);
+    return `<div class="card ${voted?'done':''}">
+      <div class="vnum">Video ${vi+1}</div>
+      <div class="vtitle">${esc(v.title||'Bez názvu')}</div>
+      <div class="row">
+        ${v.url ? `<a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Přehrát</a>` : ''}
+        <button class="btn ${voted?'voted':''}" id="vb_${k}"
+          ${voted ? 'disabled' : can ? `onclick="vote('${k}')"` : 'disabled'}>
+          ${voted ? '✓ Hlasováno' : can ? 'Hlasovat' : '—'}
+        </button>
+      </div>
+      <div>
+        <div class="bar-lbl">${c} ${cz(c)}</div>
+        <div class="bar-t"><div class="bar-f" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function cz(n){return n===1?'hlas':n>=2&&n<=4?'hlasy':'hlasů';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function switchG(i){activeG=i;render();}
+
+/* ── VOTE ── */
+async function vote(k) {
+  if (myVotes.has(k) || myVotes.size >= 3) return;
+  const btn = document.getElementById('vb_'+k);
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const d = await api({ action:'vote', key:k });
+    if (d.error) { alert(d.error); if(btn){btn.disabled=false;btn.textContent='Hlasovat';} return; }
+    counts  = d.counts || counts;
+    myVotes = new Set(d.myVotes || [...myVotes, k]);
+    render();
+  } catch(e) {
+    alert('Chyba při hlasování: ' + e);
+    if(btn){btn.disabled=false;btn.textContent='Hlasovat';}
+  }
+}
+
+/* ── ADMIN ── */
+function toggleAdmin() {
+  if (!adminOpen) {
+    const p = pin || prompt('Zadej admin PIN:');
+    if (!p) return;
+    pin = p;
+    localStorage.setItem(PIN_KEY, p);
+    adminOpen = true;
+    renderAdmin();
+  } else {
+    adminOpen = false;
+    document.getElementById('adminArea').innerHTML = '';
+  }
+}
+
+function renderAdmin() {
+  document.getElementById('adminArea').innerHTML = `
+    <div class="ap">
+      <div class="ap-title">Správa hlasování</div>
+      <div id="ap-msg"></div>
+      ${cfg.groups.map((g,gi) => `
+        <div class="sec-title">Skupina ${gi+1}</div>
+        <input class="inp gname" id="gn${gi}" value="${esc(g.name)}" placeholder="Název skupiny">
+        <div id="vl${gi}">${g.videos.map((v,vi) => vrow(gi,vi,v)).join('')}</div>
+        <button class="add-btn" onclick="addV(${gi})">+ Přidat video</button>
+        ${gi < cfg.groups.length-1 ? '<div class="sep"></div>' : ''}
+      `).join('')}
+      <div class="ap-foot">
+        <button class="btn-reset" onclick="resetVotes()">Smazat všechny hlasy</button>
+        <button class="btn-cancel" onclick="toggleAdmin()">Zrušit</button>
+        <button class="btn-save" onclick="saveA()">Uložit</button>
+      </div>
+    </div>`;
+}
+
+function vrow(gi,vi,v) {
+  return `<div class="vrow">
+    <input class="inp" id="vt${gi}_${vi}" value="${esc(v?.title||'')}" placeholder="Název videa">
+    <input class="inp" id="vu${gi}_${vi}" value="${esc(v?.url||'')}" placeholder="URL (YouTube, Drive, OneDrive…)">
+    <button class="rm" onclick="rmV(${gi},${vi})" title="Odebrat">✕</button>
+  </div>`;
+}
+
+function addV(gi) {
+  collectAdmin();
+  cfg.groups[gi].videos.push({title:'',url:''});
+  renderAdmin();
+  setTimeout(() => {
+    const n = cfg.groups[gi].videos.length - 1;
+    const el = document.getElementById(`vt${gi}_${n}`);
+    if (el) el.focus();
+  }, 40);
+}
+
+function rmV(gi,vi) { collectAdmin(); cfg.groups[gi].videos.splice(vi,1); renderAdmin(); }
+
+function collectAdmin() {
+  cfg.groups.forEach((g,gi) => {
+    const ne = document.getElementById(`gn${gi}`);
+    if (ne) g.name = ne.value.trim() || `Skupina ${gi+1}`;
+    g.videos.forEach((_,vi) => {
+      const te = document.getElementById(`vt${gi}_${vi}`);
+      const ue = document.getElementById(`vu${gi}_${vi}`);
+      if (te) g.videos[vi].title = te.value.trim();
+      if (ue) g.videos[vi].url   = ue.value.trim();
+    });
+    g.videos = g.videos.filter(v => v.title);
+  });
+}
+
+async function saveA() {
+  collectAdmin();
+  apMsg('Ukládám…','');
+  try {
+    const d = await api({ action:'saveConfig', cfg: JSON.stringify(cfg), pin });
+    if (d.error) { apMsg(d.error,'err'); return; }
+    apMsg('Uloženo!','ok');
+    setTimeout(() => { adminOpen=false; document.getElementById('adminArea').innerHTML=''; render(); }, 900);
+  } catch(e) { apMsg('Chyba: '+e,'err'); }
+}
+
+async function resetVotes() {
+  if (!confirm('Opravdu smazat všechny hlasy?')) return;
+  apMsg('Mažu…','');
+  try {
+    const d = await api({ action:'reset', pin });
+    if (d.error) { apMsg(d.error,'err'); return; }
+    counts={}; myVotes=new Set();
+    apMsg('Hlasy smazány.','ok');
+    setTimeout(() => { adminOpen=false; document.getElementById('adminArea').innerHTML=''; render(); }, 900);
+  } catch(e) { apMsg('Chyba: '+e,'err'); }
+}
+
+function apMsg(txt, type) {
+  const el = document.getElementById('ap-msg');
+  if (!el) return;
+  el.className = 'msg' + (type ? ' '+type : '');
+  el.textContent = txt;
+  el.style.display = txt ? '' : 'none';
+}
+
+/* ── INIT ── */
+if (gasUrl) {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  init();
+}
+</script>
+</body>
+</html>
